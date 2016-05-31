@@ -26,9 +26,8 @@
 
 .icon-delete-note {
     float: right;
-    position: absolute;
-    right: 10px;
-    top: 6px;
+    margin: 2px;
+    opacity: 0.5;
 }
 
 #div-content .save-button {
@@ -48,7 +47,6 @@
 
 #div-content .note-title {
    height: 28px;
-   width: calc(100% - 20px);
    font-size: 18px;
    font-weight: bold;
    text-overflow: ellipsis;

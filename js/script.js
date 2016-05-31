@@ -147,6 +147,7 @@ Notes.prototype = {
 // this will be the view that is used to update the html
 var View = function (notes) {
     this._notes = notes;
+    this._editor = null;
 };
 
 View.prototype = {
@@ -163,8 +164,8 @@ View.prototype = {
 
         var note = $('.notes-grid [data-id=' + id + ']').parent();
 
-        var title = note.find("#title-editable").html();
-        var content = note.find("#content-editable").html();
+        var title = note.find(".note-title").html();
+        var content = note.find(".note-content").html();
         var color = note.children().css("background-color");
         var colors = modal[0].getElementsByClassName("circle-toolbar");
         $.each(colors, function(i, c) {
@@ -180,7 +181,9 @@ View.prototype = {
 
         modalnote.data('id', id);
         modaltitle.html(title);
-        modalcontent.html(content);
+        this._editor.focus();
+        this._editor.value(content);
+        this._editor.cursor.moveCursorToEnd(this._editor.element.lastChild);
         modalnote.css("background-color", color);
 
         /* Positioning the modal to the original size */
@@ -197,7 +200,7 @@ View.prototype = {
 
         modal.removeClass("hide-modal-note");
         modal.addClass("show-modal-note");
-        modalcontent.focus();
+        this._editor.focus();
     },
     cancelEdit: function () {
         var modal = $('#modal-note-div');
@@ -217,7 +220,7 @@ View.prototype = {
 
         modalnote.data('id', -1);
         modaltitle.html("");
-        modalcontent.html("");
+        //modalcontent.html("");
     },
     colorToHex: function(color) {
         if (color.substr(0, 1) === '#') {
@@ -248,6 +251,33 @@ View.prototype = {
                 isFitWidth: true,
                 fitWidth: true,
                 gutter: 10,
+            }
+        });
+
+        this._editor = new Medium({
+            element: document.getElementById('content-editable'),
+            mode: Medium.richMode,
+            placeholder: 'Write your Note here...',
+            autoHR: false,
+//            tags: null,
+//            attributes: null,
+            keyContext: {
+                'enter': function(e, element) {
+                    var sib = element.previousSibling;
+                    if (sib && sib.tagName == 'P' && sib.innerHTML.match(/^[*]/)) {
+                        var ul = document.createElement('ul'),
+                            li = document.createElement('li');
+                        li.innerHTML = sib.innerHTML;
+                        ul.appendChild(li);
+                        ul.className = "quicknote-list";
+                        sib.parentNode.replaceChild(ul, sib);
+                        this.cursor.caretToBeginning(element);
+                    }
+                    else if (sib && sib.tagName == 'LI') {
+                        element.className = sib.className;
+                        this.cursor.caretToBeginning(element);
+                    }
+                }
             }
         });
 
@@ -398,9 +428,9 @@ View.prototype = {
                     note = self._notes.getActive();
                     var $notehtml = $("<div class=\"note-grid-item\">" +
                                       "<div class=\"quicknote noselect\" style=\"background-color:" + note.color + "\" data-id=\"" + note.id + "\">" +
-                                      "<div id='title-editable' class='note-title'>" + note.title + "</div>" +
-                                      "<button class=\"icon-delete hide-delete-icon icon-delete-note\" title=\"Delete\"></button>" +
-                                      "<div id='content-editable' class='note-content'>" + note.content + "</div>" +
+                                      "<div class=\"icon-delete hide-delete-icon icon-delete-note\" title=\"Delete\"></div>" +
+                                      "<div class='note-title'>" + note.title + "</div>" +
+                                      "<div class='note-content'>" + note.content + "</div>" +
                                       "</div></div>");
                     $(".notes-grid").prepend( $notehtml )
                                     .isotope({ filter: '*'})
@@ -477,10 +507,10 @@ function filter (query) {
         if (query) {
             query = query.toLowerCase();
             $('.notes-grid').isotope({ filter: function() {
-                var title = $(this).find("#title-editable").html().toLowerCase();
+                var title = $(this).find(".note-title").html().toLowerCase();
                 if (title.search(query) >= 0)
                     return true;
-                var content = $(this).find("#content-editable").html().toLowerCase();
+                var content = $(this).find(".note-content").html().toLowerCase();
                 if (content.search(query) >= 0)
                     return true;
                 return false;
@@ -508,6 +538,7 @@ OC.Plugins.register('OCA.Search', SearchProxy);
 
 var notes = new Notes(OC.generateUrl('/apps/quicknotes/notes'));
 var view = new View(notes);
+
 notes.loadAll().done(function () {
     view.render();
 }).fail(function () {
@@ -515,6 +546,6 @@ notes.loadAll().done(function () {
 });
 
 
-});
+}); // $(document).ready(function ()
 
 })(OC, window, jQuery);
