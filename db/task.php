@@ -5,7 +5,7 @@ use JsonSerializable;
 
 use OCP\AppFramework\Db\Entity;
 
-class Note extends Entity implements JsonSerializable {
+class Task extends Entity implements JsonSerializable {
 
 	protected $description;
 	protected $done;
